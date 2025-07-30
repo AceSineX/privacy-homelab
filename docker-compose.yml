@@ -1,0 +1,40 @@
+services:
+  
+  unbound:
+    image: mvance/unbound:latest
+    container_name: unbound
+    restart: unless-stopped
+    ports:
+      - "${UNBOUND_PORT}:${UNBOUND_PORT}/tcp"
+      - "${UNBOUND_PORT}:${UNBOUND_PORT}/udp"
+    volumes:
+      - ./services/unbound/unbound.conf:/opt/unbound/etc/unbound/unbound.conf:ro
+    healthcheck:
+      test: ["CMD", "dig", "+timeout=2", "cloudflare.com", "@127.0.0.1", "-p", "${UNBOUND_PORT}"]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+
+  pihole:
+    image: pihole/pihole:latest
+    container_name: pihole
+    hostname: pihole
+    restart: unless-stopped
+    network_mode: host # host‑network (shares computer IP)
+    environment:
+      TZ: ${TZ}
+      # Web UI / API password – keep in .env and git‑ignored
+      WEBPASSWORD: ${PIHOLE_PASSWORD}
+      # Let Pi‑hole listen on all interfaces (bridge / host) :contentReference[oaicite:1]{index=1}
+      FTLCONF_dns_listeningMode: "all"
+      # Optional: forward DNSSEC AD‑bit to clients
+      FTLCONF_dns_dnssec: "true"
+      FTLCONF_dns_upstreams: "127.0.0.1#${UNBOUND_PORT};127.0.0.1#${UNBOUND_PORT}"
+    volumes:
+      - ./services/pihole/etc-pihole:/etc/pihole
+      - ./services/pihole/etc-dnsmasq.d:/etc/dnsmasq.d
+    healthcheck:
+      test: ["CMD", "dig", "+tries=1", "+timeout=2", "@127.0.0.1", "pi.hole"]
+      interval: 30s     # run every 30 s
+      timeout: 5s
+      retries: 3

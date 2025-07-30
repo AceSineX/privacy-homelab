@@ -1,1 +1,22 @@
+# Secrets
 .env
+
+# Other
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+services/*/data/
+services/*/db/
+services/traefik/acme.json
+services/wireguard/config/
+services/restic/credentials
+backups/
+
+# Unbound
+services/unbound/logs/*
+
+# PiHole
+services/pihole/etc-pihole/*
+services/pihole/etc-dnsmasq.d/*
